@@ -1,65 +1,68 @@
-import Image from "next/image";
+import { Suspense } from "react";
+import { getAllApplications, getDashboardStats, getOverdueFollowUps } from "@/lib/queries";
+import DashboardStats from "@/components/DashboardStats";
+import ApplicationTable from "@/components/ApplicationTable";
+import FollowUpAlert from "@/components/FollowUpAlert";
+import SearchAndFilter from "@/components/SearchAndFilter";
+import Link from "next/link";
+import ThemeToggleClient from "@/components/ThemeToggleClient";
+import type { Status } from "@/db/schema";
 
-export default function Home() {
+type PageProps = {
+  searchParams: Promise<{ status?: string; search?: string }>;
+};
+
+export default async function Home({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const [stats, followUps, apps] = await Promise.all([
+    getDashboardStats(),
+    getOverdueFollowUps(),
+    getAllApplications({
+      status: params.status as Status | undefined,
+      search: params.search,
+    }),
+  ]);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
+    <main className="min-h-screen bg-neutral-50 dark:bg-neutral-950 px-4 py-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-xl font-bold text-neutral-900 dark:text-white">Internship CRM</h1>
+            <p className="text-xs text-neutral-500 dark:text-neutral-500 mt-0.5">Track your applications</p>
+          </div>
+          <div className="flex items-center gap-3">
             <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              href="/api/export"
+              className="px-3 py-1.5 rounded-md text-sm border border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              ↓ CSV
+            </a>
+            <ThemeToggleClient />
+            <Link
+              href="/applications/new"
+              className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors"
             >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              + Add
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+
+        {/* Stats */}
+        <DashboardStats stats={stats} />
+
+        {/* Follow-up alerts */}
+        <FollowUpAlert items={followUps} />
+
+        {/* Search + filter */}
+        <Suspense>
+          <SearchAndFilter />
+        </Suspense>
+
+        {/* Table */}
+        <ApplicationTable applications={apps} />
+      </div>
+    </main>
   );
 }
