@@ -1,7 +1,7 @@
 import type { Application } from "@/db/schema";
 import StatusSelect from "./StatusSelect";
+import DeleteButton from "./DeleteButton";
 import Link from "next/link";
-import { deleteApplicationAction } from "@/lib/actions";
 
 const stageLabels: Record<string, string> = {
   "pre-seed": "Pre-seed",
@@ -10,22 +10,6 @@ const stageLabels: Record<string, string> = {
   "series-b": "Series B",
   unknown: "Unknown",
 };
-
-function DeleteButton({ id }: { id: number }) {
-  return (
-    <form action={deleteApplicationAction.bind(null, id)}>
-      <button
-        type="submit"
-        onClick={(e) => {
-          if (!confirm("Delete this application?")) e.preventDefault();
-        }}
-        className="text-xs text-red-400 hover:text-red-600 dark:text-red-500 dark:hover:text-red-400"
-      >
-        Delete
-      </button>
-    </form>
-  );
-}
 
 export default function ApplicationTable({ applications }: { applications: Application[] }) {
   if (applications.length === 0) {
