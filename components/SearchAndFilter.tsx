@@ -49,7 +49,7 @@ export default function SearchAndFilter() {
         className="px-3 py-1.5 rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-sm text-neutral-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
       >
         <option value="">All statuses</option>
-        {statusEnum.map((s) => (
+        {statusEnum.enumValues.map((s) => (
           <option key={s} value={s}>
             {statusLabels[s]}
           </option>

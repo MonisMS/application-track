@@ -42,7 +42,7 @@ export default function StatusSelect({ id, status }: { id: number; status: Statu
       disabled={isPending}
       className={`bg-transparent border-0 text-xs font-medium cursor-pointer focus:outline-none focus:ring-1 focus:ring-neutral-400 rounded px-1 py-0.5 ${statusColors[status]} ${isPending ? "opacity-50" : ""}`}
     >
-      {statusEnum.map((s) => (
+      {statusEnum.enumValues.map((s) => (
         <option key={s} value={s} className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white">
           {statusLabels[s]}
         </option>

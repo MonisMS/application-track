@@ -61,7 +61,7 @@ export default function ApplicationForm({ action, defaultValues, submitLabel = "
         <div>
           <label className={labelClass}>Stage</label>
           <select name="stage" defaultValue={defaultValues?.stage ?? "unknown"} className={inputClass}>
-            {stageEnum.map((s) => (
+            {stageEnum.enumValues.map((s) => (
               <option key={s} value={s}>
                 {stageLabels[s]}
               </option>
@@ -71,7 +71,7 @@ export default function ApplicationForm({ action, defaultValues, submitLabel = "
         <div>
           <label className={labelClass}>Status</label>
           <select name="status" defaultValue={defaultValues?.status ?? "applied"} className={inputClass}>
-            {statusEnum.map((s) => (
+            {statusEnum.enumValues.map((s) => (
               <option key={s} value={s}>
                 {statusLabels[s]}
               </option>
