@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { applications } from "@/db/schema";
-import { eq, desc, like, lte, and, notInArray } from "drizzle-orm";
+import { eq, desc, like, lte, and, notInArray, isNotNull } from "drizzle-orm";
 import type { NewApplication, Status } from "@/db/schema";
 
 export async function getAllApplications(filters?: {
@@ -27,15 +27,20 @@ export async function getApplicationById(id: number) {
   return result[0] ?? null;
 }
 
-export async function createApplication(data: Omit<NewApplication, "id" | "createdAt" | "updatedAt">) {
+export async function createApplication(
+  data: Omit<NewApplication, "id" | "createdAt" | "updatedAt">
+) {
   const result = await db.insert(applications).values(data).returning();
   return result[0];
 }
 
-export async function updateApplication(id: number, data: Partial<Omit<NewApplication, "id" | "createdAt">>) {
+export async function updateApplication(
+  id: number,
+  data: Partial<Omit<NewApplication, "id" | "createdAt">>
+) {
   const result = await db
     .update(applications)
-    .set({ ...data, updatedAt: new Date().toISOString() })
+    .set({ ...data, updatedAt: new Date() })
     .where(eq(applications.id, id))
     .returning();
   return result[0];
@@ -52,7 +57,9 @@ export async function updateApplicationStatus(id: number, status: Status) {
 export async function getDashboardStats() {
   const all = await db.select().from(applications);
   const total = all.length;
-  const replies = all.filter((a) => ["replied", "interview", "offer"].includes(a.status)).length;
+  const replies = all.filter((a) =>
+    ["replied", "interview", "offer"].includes(a.status)
+  ).length;
   const interviews = all.filter((a) => a.status === "interview").length;
   const offers = all.filter((a) => a.status === "offer").length;
 
@@ -73,6 +80,7 @@ export async function getOverdueFollowUps() {
     .from(applications)
     .where(
       and(
+        isNotNull(applications.followUpDate),
         lte(applications.followUpDate, today),
         notInArray(applications.status, ["rejected", "offer", "ghosted"])
       )

@@ -16,9 +16,9 @@ export async function GET() {
     "Created At",
   ];
 
-  const escape = (val: string | number | null | undefined) => {
+  const escape = (val: unknown) => {
     if (val == null) return "";
-    const str = String(val);
+    const str = val instanceof Date ? val.toISOString() : String(val);
     if (str.includes(",") || str.includes('"') || str.includes("\n")) {
       return `"${str.replace(/"/g, '""')}"`;
     }

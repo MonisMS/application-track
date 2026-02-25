@@ -6,6 +6,7 @@ import FollowUpAlert from "@/components/FollowUpAlert";
 import SearchAndFilter from "@/components/SearchAndFilter";
 import Link from "next/link";
 import ThemeToggleClient from "@/components/ThemeToggleClient";
+import { auth, signOut } from "@/auth";
 import type { Status } from "@/db/schema";
 
 type PageProps = {
@@ -14,7 +15,8 @@ type PageProps = {
 
 export default async function Home({ searchParams }: PageProps) {
   const params = await searchParams;
-  const [stats, followUps, apps] = await Promise.all([
+  const [session, stats, followUps, apps] = await Promise.all([
+    auth(),
     getDashboardStats(),
     getOverdueFollowUps(),
     getAllApplications({
@@ -30,7 +32,9 @@ export default async function Home({ searchParams }: PageProps) {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-xl font-bold text-neutral-900 dark:text-white">Internship CRM</h1>
-            <p className="text-xs text-neutral-500 dark:text-neutral-500 mt-0.5">Track your applications</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-500 mt-0.5">
+              {session?.user?.email ?? ""}
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <a
@@ -46,6 +50,19 @@ export default async function Home({ searchParams }: PageProps) {
             >
               + Add
             </Link>
+            <form
+              action={async () => {
+                "use server";
+                await signOut({ redirectTo: "/login" });
+              }}
+            >
+              <button
+                type="submit"
+                className="px-3 py-1.5 rounded-md text-sm border border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              >
+                Sign out
+              </button>
+            </form>
           </div>
         </div>
 
