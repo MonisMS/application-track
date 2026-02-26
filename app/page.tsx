@@ -1,5 +1,9 @@
 import { Suspense } from "react";
-import { getAllApplications, getDashboardStats, getOverdueFollowUps } from "@/lib/queries";
+import {
+  getAllApplications,
+  getDashboardStats,
+  getOverdueFollowUps,
+} from "@/lib/queries";
 import DashboardStats from "@/components/DashboardStats";
 import ApplicationTable from "@/components/ApplicationTable";
 import FollowUpAlert from "@/components/FollowUpAlert";
@@ -7,21 +11,32 @@ import SearchAndFilter from "@/components/SearchAndFilter";
 import Link from "next/link";
 import ThemeToggleClient from "@/components/ThemeToggleClient";
 import { auth, signOut } from "@/auth";
-import type { Status } from "@/db/schema";
+import { redirect } from "next/navigation";
+import type { Status, Source } from "@/db/schema";
 
 type PageProps = {
-  searchParams: Promise<{ status?: string; search?: string }>;
+  searchParams: Promise<{
+    status?: string;
+    source?: string;
+    search?: string;
+    sort?: string;
+  }>;
 };
 
 export default async function Home({ searchParams }: PageProps) {
   const params = await searchParams;
-  const [session, stats, followUps, apps] = await Promise.all([
-    auth(),
-    getDashboardStats(),
-    getOverdueFollowUps(),
-    getAllApplications({
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
+  const userId = session.user.id;
+
+  const [stats, followUps, apps] = await Promise.all([
+    getDashboardStats(userId),
+    getOverdueFollowUps(userId),
+    getAllApplications(userId, {
       status: params.status as Status | undefined,
+      source: params.source as Source | undefined,
       search: params.search,
+      sort: params.sort === "updatedAt" ? "updatedAt" : "appliedDate",
     }),
   ]);
 
@@ -31,12 +46,26 @@ export default async function Home({ searchParams }: PageProps) {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-xl font-bold text-neutral-900 dark:text-white">Internship CRM</h1>
-            <p className="text-xs text-neutral-500 dark:text-neutral-500 mt-0.5">
-              {session?.user?.email ?? ""}
+            <h1 className="text-xl font-bold text-neutral-900 dark:text-white">
+              Internship CRM
+            </h1>
+            <p className="text-xs text-neutral-500 mt-0.5">
+              {session.user.email ?? ""}
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <Link
+              href="/profile"
+              className="px-3 py-1.5 rounded-md text-sm border border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            >
+              Profile
+            </Link>
+            <Link
+              href="/resources"
+              className="px-3 py-1.5 rounded-md text-sm border border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            >
+              Resources
+            </Link>
             <a
               href="/api/export"
               className="px-3 py-1.5 rounded-md text-sm border border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"

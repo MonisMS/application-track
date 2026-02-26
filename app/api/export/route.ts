@@ -1,7 +1,12 @@
 import { getAllApplicationsForExport } from "@/lib/queries";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
 export async function GET() {
-  const apps = await getAllApplicationsForExport();
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
+
+  const apps = await getAllApplicationsForExport(session.user.id);
 
   const headers = [
     "ID",
@@ -9,11 +14,16 @@ export async function GET() {
     "Role",
     "Stage",
     "Status",
+    "Source",
     "Applied Date",
+    "Job URL",
     "Follow-up Date",
     "Contact Person",
+    "Contact URL",
+    "Last Contacted",
     "Notes",
     "Created At",
+    "Updated At",
   ];
 
   const escape = (val: unknown) => {
@@ -32,11 +42,16 @@ export async function GET() {
       a.role,
       a.stage,
       a.status,
+      a.source,
       a.appliedDate,
+      a.jobUrl,
       a.followUpDate,
       a.contactPerson,
+      a.contactUrl,
+      a.lastContactedAt,
       a.notes,
       a.createdAt,
+      a.updatedAt,
     ]
       .map(escape)
       .join(",")

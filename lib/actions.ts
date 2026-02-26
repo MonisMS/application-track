@@ -6,18 +6,46 @@ import {
   updateApplication,
   deleteApplication,
   updateApplicationStatus,
+  getUserProfile,
+  upsertUserProfile,
 } from "./queries";
-import type { Status, Stage } from "@/db/schema";
+import type { Status, Stage, Source } from "@/db/schema";
 import { redirect } from "next/navigation";
+import { auth } from "@/auth";
+
+async function requireUserId(): Promise<string> {
+  const session = await auth();
+  const id = session?.user?.id;
+  if (!id) redirect("/login");
+  return id;
+}
+
+function sanitizeUrl(raw: string | null): string | null {
+  if (!raw) return null;
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") return raw;
+  } catch {
+    // invalid URL — ignore
+  }
+  return null;
+}
 
 export async function createApplicationAction(formData: FormData) {
+  const userId = await requireUserId();
+
   const data = {
+    userId,
     companyName: formData.get("companyName") as string,
     role: formData.get("role") as string,
     stage: formData.get("stage") as Stage,
     appliedDate: formData.get("appliedDate") as string,
     status: (formData.get("status") as Status) ?? "applied",
+    source: (formData.get("source") as Source) || "other",
+    jobUrl: sanitizeUrl(formData.get("jobUrl") as string),
     contactPerson: (formData.get("contactPerson") as string) || null,
+    contactUrl: sanitizeUrl(formData.get("contactUrl") as string),
+    lastContactedAt: (formData.get("lastContactedAt") as string) || null,
     followUpDate: (formData.get("followUpDate") as string) || null,
     notes: (formData.get("notes") as string) || null,
   };
@@ -28,28 +56,77 @@ export async function createApplicationAction(formData: FormData) {
 }
 
 export async function updateApplicationAction(id: number, formData: FormData) {
+  const userId = await requireUserId();
+
   const data = {
     companyName: formData.get("companyName") as string,
     role: formData.get("role") as string,
     stage: formData.get("stage") as Stage,
     appliedDate: formData.get("appliedDate") as string,
     status: formData.get("status") as Status,
+    source: (formData.get("source") as Source) || "other",
+    jobUrl: sanitizeUrl(formData.get("jobUrl") as string),
     contactPerson: (formData.get("contactPerson") as string) || null,
+    contactUrl: sanitizeUrl(formData.get("contactUrl") as string),
+    lastContactedAt: (formData.get("lastContactedAt") as string) || null,
     followUpDate: (formData.get("followUpDate") as string) || null,
     notes: (formData.get("notes") as string) || null,
   };
 
-  await updateApplication(id, data);
+  await updateApplication(id, userId, data);
   revalidatePath("/");
   redirect("/");
 }
 
 export async function deleteApplicationAction(id: number) {
-  await deleteApplication(id);
+  const userId = await requireUserId();
+  await deleteApplication(id, userId);
   revalidatePath("/");
 }
 
 export async function updateStatusAction(id: number, status: Status) {
-  await updateApplicationStatus(id, status);
+  const userId = await requireUserId();
+  await updateApplicationStatus(id, userId, status);
   revalidatePath("/");
+}
+
+export async function setFollowUpAction(id: number, formData: FormData) {
+  const userId = await requireUserId();
+  const date = (formData.get("followUpDate") as string) || null;
+  await updateApplication(id, userId, { followUpDate: date });
+  revalidatePath("/");
+}
+
+export async function markContactedAction(id: number) {
+  const userId = await requireUserId();
+  const today = new Date().toISOString().split("T")[0];
+
+  const profile = await getUserProfile(userId);
+  const days = profile?.defaultFollowUpDays ?? 7;
+
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  const newFollowUpDate = d.toISOString().split("T")[0];
+
+  await updateApplication(id, userId, {
+    lastContactedAt: today,
+    followUpDate: newFollowUpDate,
+  });
+  revalidatePath("/");
+}
+
+export async function updateProfileAction(formData: FormData) {
+  const userId = await requireUserId();
+
+  const raw = {
+    resumeUrl: sanitizeUrl(formData.get("resumeUrl") as string),
+    portfolioUrl: sanitizeUrl(formData.get("portfolioUrl") as string),
+    linkedinUrl: sanitizeUrl(formData.get("linkedinUrl") as string),
+    githubUrl: sanitizeUrl(formData.get("githubUrl") as string),
+    defaultFollowUpDays:
+      parseInt(formData.get("defaultFollowUpDays") as string, 10) || 7,
+  };
+
+  await upsertUserProfile(userId, raw);
+  revalidatePath("/profile");
 }

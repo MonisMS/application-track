@@ -28,19 +28,36 @@ export const statusEnum = pgEnum("status", [
   "ghosted",
 ]);
 
+export const sourceEnum = pgEnum("source", [
+  "wellfound",
+  "linkedin",
+  "referral",
+  "twitter",
+  "cold_email",
+  "other",
+]);
+
 export type Stage = (typeof stageEnum.enumValues)[number];
 export type Status = (typeof statusEnum.enumValues)[number];
+export type Source = (typeof sourceEnum.enumValues)[number];
 
 // ─── Applications ─────────────────────────────────────────────────────────────
 
 export const applications = pgTable("applications", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   companyName: text("company_name").notNull(),
   role: text("role").notNull(),
   stage: stageEnum("stage").notNull().default("unknown"),
   appliedDate: text("applied_date").notNull(),
   status: statusEnum("status").notNull().default("applied"),
+  source: sourceEnum("source").default("other"),
+  jobUrl: text("job_url"),
   contactPerson: text("contact_person"),
+  contactUrl: text("contact_url"),
+  lastContactedAt: text("last_contacted_at"),
   followUpDate: text("follow_up_date"),
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -49,6 +66,24 @@ export const applications = pgTable("applications", {
 
 export type Application = typeof applications.$inferSelect;
 export type NewApplication = typeof applications.$inferInsert;
+
+// ─── User Profiles ────────────────────────────────────────────────────────────
+
+export const userProfiles = pgTable("user_profile", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  userId: text("user_id")
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
+  resumeUrl: text("resume_url"),
+  portfolioUrl: text("portfolio_url"),
+  linkedinUrl: text("linkedin_url"),
+  githubUrl: text("github_url"),
+  defaultFollowUpDays: integer("default_follow_up_days").notNull().default(7),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export type UserProfile = typeof userProfiles.$inferSelect;
 
 // ─── NextAuth tables ──────────────────────────────────────────────────────────
 
