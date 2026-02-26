@@ -7,7 +7,6 @@ import {
   deleteApplication,
   updateApplicationStatus,
   getUserProfile,
-  upsertUserProfile,
 } from "./queries";
 import type { Status, Stage, Source } from "@/db/schema";
 import { redirect } from "next/navigation";
@@ -34,19 +33,31 @@ function sanitizeUrl(raw: string | null): string | null {
 export async function createApplicationAction(formData: FormData) {
   const userId = await requireUserId();
 
+  const appliedDate = formData.get("appliedDate") as string;
+  let followUpDate = (formData.get("followUpDate") as string) || null;
+
+  // Auto-set follow-up date from vault setting if user left it blank
+  if (!followUpDate && appliedDate) {
+    const profile = await getUserProfile(userId);
+    const days = profile?.defaultFollowUpDays ?? 7;
+    const d = new Date(appliedDate);
+    d.setDate(d.getDate() + days);
+    followUpDate = d.toISOString().split("T")[0];
+  }
+
   const data = {
     userId,
     companyName: formData.get("companyName") as string,
     role: formData.get("role") as string,
     stage: formData.get("stage") as Stage,
-    appliedDate: formData.get("appliedDate") as string,
+    appliedDate,
     status: (formData.get("status") as Status) ?? "applied",
     source: (formData.get("source") as Source) || "other",
     jobUrl: sanitizeUrl(formData.get("jobUrl") as string),
     contactPerson: (formData.get("contactPerson") as string) || null,
     contactUrl: sanitizeUrl(formData.get("contactUrl") as string),
     lastContactedAt: (formData.get("lastContactedAt") as string) || null,
-    followUpDate: (formData.get("followUpDate") as string) || null,
+    followUpDate,
     notes: (formData.get("notes") as string) || null,
   };
 
@@ -115,18 +126,3 @@ export async function markContactedAction(id: number) {
   revalidatePath("/");
 }
 
-export async function updateProfileAction(formData: FormData) {
-  const userId = await requireUserId();
-
-  const raw = {
-    resumeUrl: sanitizeUrl(formData.get("resumeUrl") as string),
-    portfolioUrl: sanitizeUrl(formData.get("portfolioUrl") as string),
-    linkedinUrl: sanitizeUrl(formData.get("linkedinUrl") as string),
-    githubUrl: sanitizeUrl(formData.get("githubUrl") as string),
-    defaultFollowUpDays:
-      parseInt(formData.get("defaultFollowUpDays") as string, 10) || 7,
-  };
-
-  await upsertUserProfile(userId, raw);
-  revalidatePath("/profile");
-}

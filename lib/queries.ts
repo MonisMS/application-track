@@ -1,7 +1,7 @@
 import { db } from "./db";
-import { applications, userProfiles } from "@/db/schema";
+import { applications, userProfiles, vaultSnippets } from "@/db/schema";
 import { eq, desc, ilike, lte, and, notInArray, isNotNull } from "drizzle-orm";
-import type { NewApplication, Status, Source, UserProfile } from "@/db/schema";
+import type { NewApplication, Status, Source, UserProfile, VaultSnippet } from "@/db/schema";
 
 export async function getAllApplications(
   userId: string,
@@ -155,4 +155,44 @@ export async function upsertUserProfile(
     })
     .returning();
   return result[0];
+}
+
+// ─── Vault Snippets ───────────────────────────────────────────────────────────
+
+export async function getSnippets(userId: string): Promise<VaultSnippet[]> {
+  return db
+    .select()
+    .from(vaultSnippets)
+    .where(eq(vaultSnippets.userId, userId))
+    .orderBy(desc(vaultSnippets.createdAt));
+}
+
+export async function createSnippet(
+  userId: string,
+  data: { title: string; content: string }
+) {
+  const result = await db
+    .insert(vaultSnippets)
+    .values({ userId, ...data })
+    .returning();
+  return result[0];
+}
+
+export async function updateSnippet(
+  id: string,
+  userId: string,
+  data: { title: string; content: string }
+) {
+  const result = await db
+    .update(vaultSnippets)
+    .set({ ...data, updatedAt: new Date() })
+    .where(and(eq(vaultSnippets.id, id), eq(vaultSnippets.userId, userId)))
+    .returning();
+  return result[0];
+}
+
+export async function deleteSnippet(id: string, userId: string) {
+  await db
+    .delete(vaultSnippets)
+    .where(and(eq(vaultSnippets.id, id), eq(vaultSnippets.userId, userId)));
 }

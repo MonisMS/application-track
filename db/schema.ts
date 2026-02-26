@@ -67,7 +67,7 @@ export const applications = pgTable("applications", {
 export type Application = typeof applications.$inferSelect;
 export type NewApplication = typeof applications.$inferInsert;
 
-// ─── User Profiles ────────────────────────────────────────────────────────────
+// ─── User Profiles (Vault) ────────────────────────────────────────────────────
 
 export const userProfiles = pgTable("user_profile", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -75,15 +75,45 @@ export const userProfiles = pgTable("user_profile", {
     .notNull()
     .unique()
     .references(() => users.id, { onDelete: "cascade" }),
-  resumeUrl: text("resume_url"),
+  // Identity
+  fullName: text("full_name"),
+  email: text("email"),
+  phone: text("phone"),
+  location: text("location"),
+  // Links
   portfolioUrl: text("portfolio_url"),
-  linkedinUrl: text("linkedin_url"),
   githubUrl: text("github_url"),
+  linkedinUrl: text("linkedin_url"),
+  twitterUrl: text("twitter_url"),
+  resumeUrl: text("resume_url"),
+  // Resume file (Vercel Blob)
+  resumeFileKey: text("resume_file_key"),
+  resumeFileName: text("resume_file_name"),
+  resumeMimeType: text("resume_mime_type"),
+  resumeUploadedAt: timestamp("resume_uploaded_at"),
+  // Settings
   defaultFollowUpDays: integer("default_follow_up_days").notNull().default(7),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export type UserProfile = typeof userProfiles.$inferSelect;
+
+// ─── Vault Snippets ───────────────────────────────────────────────────────────
+
+export const vaultSnippets = pgTable("vault_snippet", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export type VaultSnippet = typeof vaultSnippets.$inferSelect;
 
 // ─── NextAuth tables ──────────────────────────────────────────────────────────
 

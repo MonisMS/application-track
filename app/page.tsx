@@ -55,10 +55,10 @@ export default async function Home({ searchParams }: PageProps) {
           </div>
           <div className="flex items-center gap-3">
             <Link
-              href="/profile"
+              href="/vault"
               className="px-3 py-1.5 rounded-md text-sm border border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             >
-              Profile
+              Vault
             </Link>
             <Link
               href="/resources"
