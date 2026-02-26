@@ -50,6 +50,7 @@ function Field({
 function buildCopyAll(v: Partial<UserProfile>): string {
   const lines: string[] = [];
   if (v.fullName) lines.push(`Name: ${v.fullName}`);
+  if (v.instituteName) lines.push(`Institute: ${v.instituteName}`);
   if (v.email) lines.push(`Email: ${v.email}`);
   if (v.phone) lines.push(`Phone: ${v.phone}`);
   if (v.location) lines.push(`Location: ${v.location}`);
@@ -87,6 +88,14 @@ export default function VaultProfileForm({
             placeholder="Jane Smith"
             error={fe.fullName}
             copyValue={v?.fullName}
+          />
+          <Field
+            label="Institute / University"
+            name="instituteName"
+            defaultValue={v?.instituteName}
+            placeholder="MIT, Stanford, etc."
+            error={fe.instituteName}
+            copyValue={v?.instituteName}
           />
           <Field
             label="Email"

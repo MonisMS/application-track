@@ -80,6 +80,7 @@ export const userProfiles = pgTable("user_profile", {
   email: text("email"),
   phone: text("phone"),
   location: text("location"),
+  instituteName: text("institute_name"),
   // Links
   portfolioUrl: text("portfolio_url"),
   githubUrl: text("github_url"),

@@ -17,6 +17,7 @@ const optionalUrl = z
 
 export const vaultSchema = z.object({
   fullName: z.string().trim().max(100).optional().transform((v) => v || null),
+  instituteName: z.string().trim().max(150).optional().transform((v) => v || null),
   email: z
     .string()
     .trim()

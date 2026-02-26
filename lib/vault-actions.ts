@@ -36,6 +36,7 @@ export async function updateVaultAction(
 
   const raw = {
     fullName: formData.get("fullName") as string,
+    instituteName: formData.get("instituteName") as string,
     email: formData.get("email") as string,
     phone: formData.get("phone") as string,
     location: formData.get("location") as string,
